@@ -1,3 +1,4 @@
+// Importation des modules nécessaires
 const express = require('express');
 const app = express();
 const http = require('http');
@@ -6,24 +7,30 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
+// Objet pour stocker les informations des salles
 const rooms = {};
 
-app.use(express.static(path.join(__dirname, 'client')));    
+// Middleware pour servir les fichiers statiques depuis le dossier 'client'
+app.use(express.static(path.join(__dirname, 'client')));
 
+// Route principale pour servir le fichier HTML de l'application
 app.get('/', (req, res) => {
     res.send(__dirname + '/client/index.html');
 });
 
+// Gestion des connexions WebSocket
 io.on('connection', (socket) => {
+    // Map pour suivre la salle associée à chaque joueur
     const playerRooms = new Map();
-    
+
     console.log('a user connected');
     socket.on('disconnect', () => {
         console.log('user disconnected');
     });
 
+    // Création d'une nouvelle partie
     socket.on('createGame', () => {
-        const roomUniqueID = makeID(6);
+        const roomUniqueID = makeID(6); // Génère un ID unique pour la salle
         rooms[roomUniqueID] = {
             p1Score: 0,
             p2Score: 0,
@@ -31,21 +38,19 @@ io.on('connection', (socket) => {
             p2Choice: null,
             restartRequests: new Set()
         };
-        socket.join(roomUniqueID);
+        socket.join(roomUniqueID); // Le joueur rejoint la salle
         socket.emit('gameCreated', {
             roomUniqueID: roomUniqueID,
-            scores: {
-                p1Score: 0,
-                p2Score: 0
-            }
+            scores: { p1Score: 0, p2Score: 0 }
         });
     });
 
+    // Un joueur rejoint une salle existante
     socket.on('joinGame', (data) => {
         if (rooms[data.roomUniqueID]) {
             socket.join(data.roomUniqueID);
-            playerRooms.set(socket.id, data.roomUniqueID);
-            socket.to(data.roomUniqueID).emit('playersConnected');
+            playerRooms.set(socket.id, data.roomUniqueID); // Associe le joueur à la salle
+            socket.to(data.roomUniqueID).emit('playersConnected'); // Notifie les autres joueurs
             socket.emit("playersConnected", {
                 scores: {
                     p1Score: rooms[data.roomUniqueID].p1Score,
@@ -55,160 +60,109 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Gestion du choix du joueur 1
     socket.on('p1Choice', (data) => {
-        let choice = data.choice;
-        rooms[data.roomUniqueID].p1Choice = choice;
+        rooms[data.roomUniqueID].p1Choice = data.choice;
         socket.to(data.roomUniqueID).emit('p1Choice', { choice: data.choice });
+        // Si les deux joueurs ont choisi, déterminer le gagnant
         if (rooms[data.roomUniqueID].p2Choice != null) {
             declareWinner(data.roomUniqueID);
         }
     });
 
+    // Gestion du choix du joueur 2
     socket.on('p2Choice', (data) => {
-        let choice = data.choice;
-        rooms[data.roomUniqueID].p2Choice = choice;
+        rooms[data.roomUniqueID].p2Choice = data.choice;
         socket.to(data.roomUniqueID).emit('p2Choice', { choice: data.choice });
+        // Si les deux joueurs ont choisi, déterminer le gagnant
         if (rooms[data.roomUniqueID].p1Choice != null) {
             declareWinner(data.roomUniqueID);
         }
     });
 
-    socket.on('restartGame', (data) => {
-        const roomID = data.roomUniqueID;
-
-        // Réinitialiser les choix pour la salle
-        if (rooms[roomID]) {
-            rooms[roomID].p1Choice = null;
-            rooms[roomID].p2Choice = null;
-        }
-
-        // Informer les joueurs que la partie est relancée
-        io.sockets.to(roomID).emit('gameRestarted');
-    });
-
+    // Redémarrage du jeu après un accord mutuel
     socket.on('restartRequest', (data) => {
         const room = rooms[data.roomUniqueID];
-        if (!room) return; // Vérifie si la salle existe
+        if (!room) return;
 
-        // Initialiser la liste des joueurs ayant demandé un redémarrage
-        if (!room.restartRequests) {
-            room.restartRequests = new Set(); // Utilise un Set pour éviter les doublons
-        }
-
-        // Si le joueur n'a pas déjà demandé, on ajoute sa requête
+        // Enregistre la demande de redémarrage
         if (!room.restartRequests.has(socket.id)) {
             room.restartRequests.add(socket.id);
-            room.restartCount = room.restartRequests.size; // Compte le nombre de requêtes
 
-            // Notifie les joueurs de la progression
+            // Envoie l'état actuel des demandes de redémarrage
             io.to(data.roomUniqueID).emit('restartProgress', {
-                restartCount: room.restartCount,
-                totalPlayers: 2 // Supposons toujours 2 joueurs
+                restartCount: room.restartRequests.size,
+                totalPlayers: 2
             });
 
-            // Si les deux joueurs ont demandé un redémarrage
-            if (room.restartCount === 2) {
-                room.restartRequests.clear(); // Réinitialise la liste
-                room.restartCount = 0; // Réinitialise le compteur
-
-                // Réinitialiser les choix pour la salle
+            // Si tous les joueurs ont demandé un redémarrage, réinitialise la partie
+            if (room.restartRequests.size === 2) {
+                room.restartRequests.clear();
                 room.p1Choice = null;
                 room.p2Choice = null;
-
-                // Notifie tous les joueurs que le jeu redémarre
                 io.to(data.roomUniqueID).emit('restartGame');
             }
         }
     });
 
+    // Gestion de la déconnexion d'un joueur
     socket.on('playerQuit', (data) => {
         const roomID = data.roomUniqueID;
-
         if (rooms[roomID]) {
-            // Informer tous les autres joueurs dans la salle
-            socket.to(roomID).emit('opponentQuit');
-
-            // Faire quitter le socket de la salle
-            socket.leave(roomID);
-
-            // Supprimer la salle si elle existe
-            delete rooms[roomID];
-
-            // Nettoyer les références
-            playerRooms.delete(socket.id);
+            socket.to(roomID).emit('opponentQuit'); // Notifie l'adversaire
+            socket.leave(roomID); // Retire le joueur de la salle
+            delete rooms[roomID]; // Supprime la salle
+            playerRooms.delete(socket.id); // Nettoie les références
         }
     });
 
+    // Gestion de la déconnexion physique d'un joueur
     socket.on('disconnect', () => {
         const roomID = playerRooms.get(socket.id);
         if (roomID && rooms[roomID]) {
-            // Informer les autres joueurs
             socket.to(roomID).emit('opponentQuit');
-
-            // Nettoyer la salle
             delete rooms[roomID];
             playerRooms.delete(socket.id);
         }
     });
-
 });
 
+// Déterminer le gagnant d'une manche
 function declareWinner(roomUniqueID) {
-    let p1Choice = rooms[roomUniqueID].p1Choice;
-    let p2Choice = rooms[roomUniqueID].p2Choice;
+    const room = rooms[roomUniqueID];
+    const { p1Choice, p2Choice } = room;
+
     let winner = null;
-
     if (p1Choice === p2Choice) {
-        winner = "d";
-    } else if (p1Choice == "Papier") {
-        if (p2Choice == "Ciseaux") {
-            winner = "p2";
-        } else {
-            winner = "p1";
-        }
-    } else if (p1Choice == "Cailloux") {
-        if (p2Choice == "Papier") {
-            winner = "p2";
-        } else {
-            winner = "p1";
-        }
-    } else if (p1Choice == "Ciseaux") {
-        if (p2Choice == "Cailloux") {
-            winner = "p2";
-        } else {
-            winner = "p1";
-        }
+        winner = "d"; // Égalité
+    } else if ((p1Choice === "Papier" && p2Choice === "Cailloux") ||
+        (p1Choice === "Cailloux" && p2Choice === "Ciseaux") ||
+        (p1Choice === "Ciseaux" && p2Choice === "Papier")) {
+        winner = "p1";
+        room.p1Score++; // Incrémente le score de P1
+    } else {
+        winner = "p2";
+        room.p2Score++; // Incrémente le score de P2
     }
 
-    if (winner === "p1") {
-        rooms[roomUniqueID].p1Score++;
-    } else if (winner === "p2") {
-        rooms[roomUniqueID].p2Score++;
-    }
-
+    // Envoie le résultat et les scores à tous les joueurs
     io.sockets.to(roomUniqueID).emit("result", {
-        winner: winner,
-        scores: {
-            p1Score: rooms[roomUniqueID].p1Score,
-            p2Score: rooms[roomUniqueID].p2Score,
-        }
+        winner,
+        scores: { p1Score: room.p1Score, p2Score: room.p2Score }
     });
-    rooms[roomUniqueID].p1Choice = null;
-    rooms[roomUniqueID].p2Choice = null;
+
+    // Réinitialise les choix pour la prochaine manche
+    room.p1Choice = null;
+    room.p2Choice = null;
 }
 
+// Démarrer le serveur
 server.listen(3000, () => {
     console.log('Server is running on port 3000');
 });
 
-function makeID(lenght) {
-    var result = '';
-    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLenght = characters.length;
-    for (var i = 0; i < lenght; i++) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLenght));
-    }
-    return result;
-} 
-
-
+// Génère un ID unique pour identifier les salles
+function makeID(length) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    return Array.from({ length }, () => characters.charAt(Math.floor(Math.random() * characters.length))).join('');
+}
