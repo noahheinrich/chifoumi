@@ -1,0 +1,245 @@
+/* Style général */
+* {
+    font-family: "Optima", sans-serif !important;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(135deg, #e3f2fd, #90caf9);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* Titre principal */
+.title {
+    text-align: center;
+    letter-spacing: 1px;
+    line-height: 1.5;
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #1e88e5;
+}
+
+/* Section initiale */
+#initial {
+    text-align: center;
+    padding: 20px;
+    background: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    max-width: 400px;
+    margin: auto;
+}
+
+#initial button,
+#initial input {
+    margin: 10px 0;
+    padding: 10px 20px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+#initial button {
+    background: #42a5f5;
+    color: white;
+}
+
+#initial button:hover {
+    background: #1e88e5;
+    transform: scale(1.05);
+}
+
+#initial input {
+    width: 100%;
+    border: 1px solid #90caf9;
+    border-radius: 5px;
+    padding: 8px;
+    font-size: 1rem;
+}
+
+/* Gameplay */
+#gamePlay {
+    text-align: center;
+    margin-top: 20px;
+}
+
+#waitingArea {
+    font-size: 1.2rem;
+    color: #1e88e5;
+    margin-bottom: 20px;
+}
+
+#gameArea {
+    background: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 600px;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+
+}
+
+#gameArea p{
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* Boutons Cailloux, Papier, Ciseaux */
+.rock,
+.paper,
+.scissor {
+    border: none;
+    width: 150px;
+    height: 150px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.rock:hover,
+.paper:hover,
+.scissor:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Zone du gagnant */
+#winnerArea {
+    margin-top: 20px;
+    padding: 15px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1b5e20;
+}
+
+.rock {
+    background: url(./assets/rock.svg);
+    background-size: cover;
+}
+
+.paper{
+    background: url(./assets/paper.svg);
+    background-size: cover;
+}
+
+.scissor{
+    background: url(./assets/scissor.svg);
+    background-size: cover;
+}
+
+#restartStatus {
+    font-size: 1rem;
+    color: #1e88e5;
+}
+
+/* Style de base du bouton */
+.copy-button {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+    color: #ffffff;
+    background-color: #4CAF50;
+    /* Vert clair */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-left: 20px;
+}
+
+/* Effet au survol */
+.copy-button:hover {
+    background-color: #45a049;
+    /* Vert légèrement plus foncé */
+}
+
+/* Effet au clic */
+.copy-button:active {
+    transform: scale(0.95);
+    background-color: #3e8e41;
+    /* Vert plus foncé */
+}
+
+#scores {
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+    color: red;
+}
+
+.game{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+}
+
+#restartButton,
+#homeButton {
+    padding: 12px 24px;
+    margin: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#restartButton {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#homeButton {
+    background-color: #2196F3;
+    color: white;
+}
+
+#restartButton:hover,
+#homeButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+}
+
+#restartButton:hover {
+    background-color: #45a049;
+}
+
+#homeButton:hover {
+    background-color: #1976D2;
+}
+
+#restartButton:active,
+#homeButton:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Pour un effet désactivé si nécessaire */
+#restartButton:disabled,
+#homeButton:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}

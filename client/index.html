@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>chifoumi</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="./client.js"></script>
+</head>
+
+<body>
+    <h1 class="title">Bienvenue dans le jeu Chifoumi</h1>
+    <div id="initial">
+        <button onclick="createGame()">Créer une partie</button>
+        <div>ou</div>
+        <input type="text" name="" id="roomUniqueID" />
+        <button onclick="joinGame()">Rejoindre une partie</button>
+    </div>
+    <div id="gamePlay">
+        <div id="waitingArea">
+
+        </div>
+        <div class="game">
+            <div id="gameArea" style="display: none;">
+                <div>
+                    <p>Toi:</p>
+                    <div id="player1Choice">
+                        <button class="rock" onclick="sendChoice('Cailloux')"></button>
+                        <button class="paper" onclick="sendChoice('Papier')"></button>
+                        <button class="scissor" onclick="sendChoice('Ciseaux')"></button>
+                    </div>
+                </div>
+                <div>
+                    <p>Adversaire:</p>
+                    <div id="player2Choice">
+                        <p id="opponentState">En attente de l'adversaire</p>
+                    </div>
+                </div>
+            </div>
+            <div id="scores" style="display: none;">
+                <p><span id="labelP1">Joueur 1</span> : <span id="p1Score">0</span></p>
+                <p><span id="labelP2">Joueur 2</span> : <span id="p2Score">0</span></p>
+            </div>
+        </div>
+        <div id="winnerArea">
+
+        </div>
+        <div id="restartStatus" style="margin-top: 10px;"></div>
+        <button id="restartButton" style="display: none;" onclick="restartGame()">Relancer la partie</button>
+        <button id="homeButton" style="display:none;">Revenir à l'accueil</button>
+    </div>
+</body>
+
+</html>
